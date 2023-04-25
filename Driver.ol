@@ -1,65 +1,82 @@
 from console import Console
 from exec import Exec
+from runtine import Runtime
 
-//Fabrizio said: Embed server in single service; Run becnhmark in seperate JVM; We might expect people to do certain things we running the benchmark - like give certain input
-//Maybe this service should be embedded?
+type programInfo {
+    program: string
+    warmup: bool
+}
 
-//Jolie java service??
-
-//Benchmark should - Find memory usage (Both what java allocates and what i actually used of that portion), cpu usage, 
-
-//type for file from exec?
-
-//Dynamic embed other program?
-
-//import javaservice from jolie, annotated with @requestresponse in jave for instance
-
-//Run Benchmark in seperate JVM that gets memory usage of program in another JVM
-
-interface BenchmarkInterface{
+interface DriverInterface{
     RequestResponse:
-        //Should take a program and give back an array of tuples containing time and usage
-        JavaMemoryUsed(undefined)(undefined),
-        //Should take a program and give back an array of tuples containing time and usage
-        ActualMemoryUsed(undefined)(undefined),
-        //Should take a program and give back an array of tuples containing time and usage
-        CPUUsage(undefined)(undefined),
-        //Should take a program and give back a triple containing an array of tuples containing time and usage for each of above
-        FullBenchmark(undefined)(undefined)
+        OpenProgram(programInfo)(int),
+
+        RunProgram()(int),
+
+        CloseProgram()(int),
+
+        GetJavaVirtualMemory()(int),
+
+        GetActualMemory()(int),
+
+        GetOpenChannels()(int),
+
+        GetCompletionTime()(int),
 }
 
 service Benchmark {
 
     embed Console as console
-    embed Exec as exec
-    //embed Server as server
+    embed Runtime as runtime
 
     inputPort Benchmark{
-    location: "socket://localhost:8001"
-        protocol: http
-        interfaces: BenchmarkInterface
+    location: "local"
+        interfaces: DriverInterface
     }
 
     main{
         println@console("it works !!")()
 
-        //How much memory java allocated
-        [ JavaMemoryUsed (request) (response) {
+        [ OpenProgram (request) (response) {
+
+            loadEmbeddedService@Runtime(filepath = program, type = .ol)(loadResponse)
+
             response = 0
         }
         ]
-        //How much memory is actually used in contrast to allocated portion
-        [ ActualMemoryUsed (request) (response) {
+
+        [ RunProgram (request) (response) {
+            
             response = 0
         }
         ]
-        //How much CPU is used
-        [ CPUUsage (request) (response) {
+
+        [ CloseProgram (request) (response) {
+            
             response = 0
         }
         ]
-        //All of the above
-        [ FullBenchmark (request) (response) {
+
+        [ GetJavaVirtualMemory (request) (response) {
+            //Might need JavaService?
+            response = 0
+        }
+        ]
+
+        [ GetActualMemory (request) (response) {
+            //Might need JavaService?
+            response = 0
+        }
+        ]
+
+        [ GetOpenChannels (request) (response) {
+            
+            response = 0
+        }
+        ]
+
+        [ GetCompletionTime (request) (response) {
+            //IGNORE to begin with
             response = 0
         }
         ]
