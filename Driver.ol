@@ -11,35 +11,54 @@ interface DriverInterface{
     RequestResponse:
         OpenProgram(programInfo)(int),
 
-        RunProgram()(int),
+        RunProgram(void)(int),
 
-        CloseProgram()(int),
+        CloseProgram(void)(int),
 
-        GetJavaVirtualMemory()(int),
+        GetJavaVirtualMemory(void)(int),
 
-        GetActualMemory()(int),
+        GetActualMemory(void)(int),
 
-        GetOpenChannels()(int),
+        GetOpenChannels(void)(int),
 
-        GetCompletionTime()(int),
+        GetCompletionTime(void)(int),
 }
 
-service Benchmark {
+interface BenchmarkTargetIface {
+        requestResponse: run (undefined)(undefined)
+}
+
+service Driver {
+
+    execution: single
 
     embed Console as console
     embed Runtime as runtime
 
-    inputPort Benchmark{
-    location: "local"
+    inputPort Driver{
+        location: "socket://localhost:8000"
+        protocol: http {}
         interfaces: DriverInterface
     }
 
+    outputPort BenchmarkTarget {
+        interfaces: BenchmarkTargetIface
+    }
+
     main{
-        println@console("it works !!")()
+        println@console("Driver starting")()
 
         [ OpenProgram (request) (response) {
 
-            loadEmbeddedService@Runtime(filepath = program, type = .ol)(loadResponse)
+            //Would i need global variable for this?
+            loadEmbeddedService@Runtime({ .filepath = request.program .type = "Jolie" .service = "run"})(BenchmarkTarget.location)
+
+            //Runs the program a couple of times to warm it up
+            if(request.warmup){
+                for(i = 0, i < 100, i++){
+                    RunProgram()()
+                }
+            }
 
             response = 0
         }
@@ -47,18 +66,20 @@ service Benchmark {
 
         [ RunProgram (request) (response) {
             
+            Run@BenchmarkTarget()()
+
             response = 0
         }
         ]
 
         [ CloseProgram (request) (response) {
-            
+            callExit@runtime(BenchmarkTarget.location)()
             response = 0
         }
         ]
 
         [ GetJavaVirtualMemory (request) (response) {
-            //Might need JavaService?
+            //Might need JavaService? - Stats.memory might cover this
             response = 0
         }
         ]
@@ -70,8 +91,9 @@ service Benchmark {
         ]
 
         [ GetOpenChannels (request) (response) {
-            
-            response = 0
+            //Unsure how excatly to do this, does this work?
+            temp << stats@runtime()(response2)
+            response << temp.files.openCount
         }
         ]
 

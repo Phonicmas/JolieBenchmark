@@ -5,9 +5,10 @@ import java.lang.management.OperatingSystemMXBean;
 public class BenchmarkService extends JavaService {
 
     @RequestResponse
-        public void test( String message ) {
-            Long commitedMem = getCommittedVirtualMemorySize();
-            return commitedMem;
-            return "hi";
+        public Long commitedMemory( String message ) {
+            OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+            Long vMem = osBean.getCommittedVirtualMemorySize();
+            return vMem; //Maybe do like runtime.stats does?
     }
+
 }
