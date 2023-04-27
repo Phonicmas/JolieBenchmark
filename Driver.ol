@@ -24,7 +24,7 @@ interface DriverInterface{
         GetCompletionTime(void)(int),
 }
 
-interface BenchmarkTargetIface {
+interface BenchmarkTargetInterface {
         requestResponse: run (undefined)(undefined)
 }
 
@@ -42,7 +42,7 @@ service Driver {
     }
 
     outputPort BenchmarkTarget {
-        interfaces: BenchmarkTargetIface
+        interfaces: BenchmarkTargetInterface
     }
 
     main{
@@ -66,7 +66,7 @@ service Driver {
 
         [ RunProgram (request) (response) {
             
-            Run@BenchmarkTarget()()
+            //Run@BenchmarkTarget()()
 
             response = 0
         }
@@ -92,8 +92,10 @@ service Driver {
 
         [ GetOpenChannels (request) (response) {
             //Unsure how excatly to do this, does this work?
-            temp << stats@runtime()(response2)
-            response << temp.files.openCount
+            //temp << stats@runtime()(response2)
+            //response << temp.files.openCount
+
+            response = 0
         }
         ]
 

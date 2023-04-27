@@ -1,6 +1,7 @@
 from console import Console
 from exec import Exec
 from time import Time
+from file import File
 
 type runBenchmarkRequest {
     program: string
@@ -32,6 +33,10 @@ interface BenchmarkInterface{
         CollectMetrics(int)(metrics)
 }
 
+constants {
+    FILENAME = "BenchmarkOuput.txt"
+}
+
 service Benchmark {
 
     execution: concurrent
@@ -39,6 +44,7 @@ service Benchmark {
     embed Console as console
     embed Exec as exec
     embed Time as time
+    embed File as file 
 
     inputPort Benchmark{
         location: "socket://localhost:8000"
@@ -87,12 +93,19 @@ service Benchmark {
             while(true){
                 if(request.metrics.javaMemory){
                     GetJavaVirtualMemory@driver()(JavaMem)
+                    println@console(JavaMem)()
+
+                    //Write to file BenchmarkOutput, appends the content.
+                    //writeFile@file( {.filename = FILENAME .content = JavaMem .append = 1} )()
+
                 }
                 if(request.metrics.actualMemory){
                     GetActualMemory@driver()(ActualMem)
+                    println@console(ActualMem)()
                 }
                 if(request.metrics.openChannels){
                     GetOpenChannels@driver()(OpenChannels)
+                    println@console(OpenChannels)()
                 }
                 /*if(request.metrics.completionTime){
                     GetCompletionTime@driver()(CompletionTime)
