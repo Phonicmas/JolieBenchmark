@@ -1,10 +1,10 @@
 from console import Console
 from exec import Exec
-from runtine import Runtime
+from runtime import Runtime
 
 type programInfo {
     program: string
-    warmup: bool
+    warmup: int
 }
 
 interface DriverInterface{
@@ -21,11 +21,11 @@ interface DriverInterface{
 
         GetOpenChannels(void)(int),
 
-        GetCompletionTime(void)(int),
+        GetCPULoad(void)(int)
 }
 
 interface BenchmarkTargetInterface {
-        requestResponse: run (undefined)(undefined)
+        requestResponse: Run (undefined)(undefined)
 }
 
 service Driver {
@@ -36,7 +36,7 @@ service Driver {
     embed Runtime as runtime
 
     inputPort Driver{
-        location: "socket://localhost:8000"
+        location: "socket://localhost:8001"
         protocol: http {}
         interfaces: DriverInterface
     }
@@ -50,14 +50,14 @@ service Driver {
 
         [ OpenProgram (request) (response) {
 
-            //Would i need global variable for this?
-            loadEmbeddedService@Runtime({ .filepath = request.program .type = "Jolie" .service = "run"})(BenchmarkTarget.location)
+            loadEmbeddedService@runtime({ .filepath = request.program .type = "Jolie" .service = "run"})(BenchmarkTarget.location)
+            //println@console("loadEmbeddedService done")()
 
-            //Runs the program a couple of times to warm it up
-            if(request.warmup){
-                for(i = 0, i < 100, i++){
-                    RunProgram()()
-                }
+            //Is there a better way to run the program for excatly 5 seconds, then killing it
+            getCurrentTimeMillis@Time()(curT)
+            while(getCurrentTimeMillis@Time()(curT2) < (curT + request.warmup)){
+                RunProgram()()
+                //println@console("warming up")()
             }
 
             response = 0
@@ -65,42 +65,45 @@ service Driver {
         ]
 
         [ RunProgram (request) (response) {
-            
-            //Run@BenchmarkTarget()()
-
+            Run@BenchmarkTarget()()
+            //println@console("running program")()
             response = 0
         }
         ]
 
         [ CloseProgram (request) (response) {
             callExit@runtime(BenchmarkTarget.location)()
+            //println@console("closing program")()
             response = 0
         }
         ]
 
         [ GetJavaVirtualMemory (request) (response) {
-            //Might need JavaService? - Stats.memory might cover this
-            response = 0
+            stats@runtime()(VMem)
+            //println@console("getting VMem")()
+            response = VMem.memory.used
         }
         ]
 
         [ GetActualMemory (request) (response) {
-            //Might need JavaService?
+            //commitedMemory@BenchmarkService()(commitedMemory)
+            //println@console("getting AMem")()
+            //response = commitedMemory
             response = 0
         }
         ]
 
         [ GetOpenChannels (request) (response) {
-            //Unsure how excatly to do this, does this work?
-            //temp << stats@runtime()(response2)
-            //response << temp.files.openCount
-
-            response = 0
+            stats@runtime()(openChannels)
+            //println@console("getting open channels")()
+            response = openChannels.files.openCount
         }
         ]
 
-        [ GetCompletionTime (request) (response) {
-            //IGNORE to begin with
+        [ GetCPULoad (request) (response) {
+            //CPULoad@BenchmarkService()(CPULoad)
+            //println@console("getting cpu load")()
+            //response = CPULoad
             response = 0
         }
         ]
