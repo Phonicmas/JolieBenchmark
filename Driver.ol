@@ -48,16 +48,6 @@ service Driver {
         interfaces: DriverInterface
     }
 
-    inputPort Self{
-        interfaces: DriverInternalInterface
-        location: "local"
-    }
-
-    outputPort Self{
-        interfaces: DriverInternalInterface
-        location: "local"
-    }
-
     outputPort BenchmarkTarget {
         interfaces: BenchmarkTargetInterface
     }
@@ -72,41 +62,41 @@ service Driver {
             loadEmbeddedService@runtime({ .filepath = request.program .type = "Jolie" .service = "run"})(BenchmarkTarget.location)
             println@console("loadEmbeddedService done")()
 
-            //Is there a better way to run the program for excatly 5 seconds, then killing it
-            getCurrentTimeMillis@time()(curT)
-            while(getCurrentTimeMillis@time(curT2) < (curT + request.warmup)){
-                RunProgram@Self()(response)
-                //println@console("warming up")()
-            }
-
             response = 0
         }
         ]
 
         [ RunProgram (request) (response) {
+            getCurrentTimeMillis@time()(startT)
+
             Run@BenchmarkTarget()()
-            //println@console("running program")()
-            response = 0
+            
+            getCurrentTimeMillis@time()(endT)
+            
+            println@console("running program")()
+            println@console((endT - startT))()
+            
+            response = (endT - startT)
         }
         ]
 
         [ CloseProgram (request) (response) {
             callExit@runtime(BenchmarkTarget.location)()
-            //println@console("closing program")()
+            println@console("closing program")()
             response = 0
         }
         ]
 
         [ GetJavaVirtualMemory (request) (response) {
             stats@runtime()(VMem)
-            //println@console("getting VMem")()
+            println@console("getting VMem")()
             response = VMem.memory.used
         }
         ]
 
         [ GetActualMemory (request) (response) {
             //commitedMemory@BenchmarkService()(commitedMemory)
-            //println@console("getting AMem")()
+            println@console("getting AMem")()
             //response = commitedMemory
             response = 0
         }
@@ -114,14 +104,14 @@ service Driver {
 
         [ GetOpenChannels (request) (response) {
             stats@runtime()(openChannels)
-            //println@console("getting open channels")()
+            println@console("getting open channels")()
             response = openChannels.files.openCount
         }
         ]
 
         [ GetCPULoad (request) (response) {
             //CPULoad@BenchmarkService()(CPULoad)
-            //println@console("getting cpu load")()
+            println@console("getting cpu load")()
             //response = CPULoad
             response = 0
         }

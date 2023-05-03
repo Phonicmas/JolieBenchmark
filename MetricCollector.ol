@@ -47,6 +47,7 @@ service MetricCollector (p:metricParams) {
 
     main {
         [ CollectMetrics (request) (response) {
+            sleep@time(1)()
             println@console("Metric collector starting")()
 
             while(true){
