@@ -4,13 +4,13 @@ from time import Time
 from file import File
 
 type runBenchmarkRequest {
-    program: string
-    invocations: int
-    cooldown: long
-    maxLifetime: int
-    samplingPeriod: int
-    metrics: metrics
-    warmup: int
+    .program: string // In use
+    .invocations: int // In use
+    .cooldown: long // In use
+    .maxLifetime: int // Not in use
+    .samplingPeriod: int // In use
+    //.metrics: metrics
+    .warmup: int // In use
 }
 
 type metrics {
@@ -27,12 +27,14 @@ type programInfo {
 
 interface BenchmarkInterface{
     RequestResponse:
-        RunBenchmark(runBenchmarkRequest)(string),
+        RunBenchmark(runBenchmarkRequest)(string)
 }
 
 interface BenchmarkInternalInterface{
     RequestResponse:
-        CollectMetrics(void)(void)
+        RunBenchmark(runBenchmarkRequest)(string),
+        CollectMetrics(void)(void),
+        LifetimeTracker(void)(void)
 }
 
 interface DriverInterface{
@@ -72,7 +74,12 @@ service Benchmark {
         interfaces: BenchmarkInterface
     }
 
-    inputPort BenchmarkInternal{
+    inputPort Self{
+        interfaces: BenchmarkInternalInterface
+        location: "local"
+    }
+
+    outputPort Self{
         interfaces: BenchmarkInternalInterface
         location: "local"
     }
@@ -84,18 +91,21 @@ service Benchmark {
     }
     
     init{
-        scheduleTimeout@Time( 100 { .operation = "CollectMetrics" } )( );
+        println@console("Program started")()
+        //How would i pass the lifetime?
+        //scheduleTimeout@time( 100 { .operation = "LifetimeTracker" } )( );
+        //scheduleTimeout@time( 100 { .operation = "CollectMetrics" } )( );
+        RunBenchmark@Self({.program = "test", .invocations = 1000, .cooldown = 3000, .maxLifetime = 100000, .samplingPeriod = 50, .warmup = 3000})()
     }
 
     main{
-        println@console("Benchmarker starting")()
-
+        //println@console("Benchmarker starting")()
         [ RunBenchmark (request) (response) {
             println@console("launching driver")()
-            exec@exec( "jolie" { .args[0] = "-s" .args[1] = "${Driver}".args[2] = request.program .waitFor = 1 });
+            exec@exec( "jolie" { .args[0] = "-s" .args[1] = "${Driver}".args[2] = request.program .waitFor = 1 })();
 
             //println@console("opening Driver")()
-            OpenProgram@Driver(.program = request.program .warmup = request.warmup)(returnVal);
+            OpenProgram@Driver({.program = request.program .warmup = request.warmup})(returnVal);
 
             for(i = 0, i < request.invocations, i++) {
                 RunProgram@Driver()(CompletionTime)
@@ -149,5 +159,15 @@ service Benchmark {
         }
         ]
 
+        [ LifetimeTracker (request) (response) {
+            getCurrentTimeMillis@time()(curT)
+            while(true){
+                if (getCurrentTimeMillis@time(curT2) >= (curT + maxLifetime)) {
+                    println@console("Lifetime reached")()
+                    //kill program
+                }
+            }
+        }
+        ]
     }
 }

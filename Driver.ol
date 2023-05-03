@@ -1,6 +1,7 @@
 from console import Console
 from exec import Exec
 from runtime import Runtime
+from time import Time
 
 type programInfo {
     program: string
@@ -34,6 +35,7 @@ service Driver {
 
     embed Console as console
     embed Runtime as runtime
+    embed Time as time
 
     inputPort Driver{
         location: "socket://localhost:8001"
@@ -54,8 +56,8 @@ service Driver {
             //println@console("loadEmbeddedService done")()
 
             //Is there a better way to run the program for excatly 5 seconds, then killing it
-            getCurrentTimeMillis@Time()(curT)
-            while(getCurrentTimeMillis@Time()(curT2) < (curT + request.warmup)){
+            getCurrentTimeMillis@time()(curT)
+            while(getCurrentTimeMillis@time(curT2) < (curT + request.warmup)){
                 RunProgram()()
                 //println@console("warming up")()
             }
