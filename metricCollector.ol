@@ -79,5 +79,11 @@ service MetricCollector (p:metricParams) {
             }
         }
         ]
+
+        [ shutdown () () {
+            exit
+        }
+        ]
+
     }
 }

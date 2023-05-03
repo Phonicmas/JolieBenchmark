@@ -1,6 +1,7 @@
-include "MetricCollector.ol"
 from exec import Exec
-
+from time import Time
+from console import Console
+from metricCollector import MetricCollector
 
 type params {
     .program: string
@@ -20,7 +21,8 @@ interface DriverInterface{
     RequestResponse:
         OpenProgram(programInfo)(int),
         RunProgram(void)(int),
-        CloseProgram(void)(int)
+        CloseProgram(void)(int),
+        Shutdown(void)(void)
 }
 
 service Benchmark (p: params){
@@ -37,13 +39,13 @@ service Benchmark (p: params){
         protocol: http {}
         interfaces: DriverInterface
     }
-    
+
     init{
         println@console("Program started")()
         
         //Schedules the program to die in the given time
         //scheduleTimeout@time( p.maxLifetime { .operation = "LifetimeTracker" } )( );
-        
+
         exec@exec( "jolie" { .args[0] = "Driver.ol" .waitFor = 0 .stdOutConsoleEnable = true})();
         
         println@console("Init block end")()
@@ -75,7 +77,14 @@ service Benchmark (p: params){
         CloseProgram@Driver()()
 
         [ LifetimeTracker (request) (response) {
-           Halt@runtime()() 
+            shutdown@metricCollector()()
+            shutdown@Driver()()
+            shutdown()()
+        }
+        ]
+
+        [ shutdown () () {
+            exit
         }
         ]
     }

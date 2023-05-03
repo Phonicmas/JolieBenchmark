@@ -22,12 +22,9 @@ interface DriverInterface{
 
         GetOpenChannels(void)(int),
 
-        GetCPULoad(void)(int)
-}
+        GetCPULoad(void)(int),
 
-interface DriverInternalInterface{
-    RequestResponse:
-        RunProgram(void)(int)
+        Shutdown(void)(void)
 }
 
 interface BenchmarkTargetInterface {
@@ -114,6 +111,11 @@ service Driver {
             println@console("getting cpu load")()
             //response = CPULoad
             response = 0
+        }
+        ]
+
+        [ shutdown () () {
+            exit
         }
         ]
     }
