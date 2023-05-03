@@ -25,6 +25,11 @@ interface DriverInterface{
         GetCPULoad(void)(int)
 }
 
+interface DriverInternalInterface{
+    RequestResponse:
+        RunProgram(void)(int)
+}
+
 interface BenchmarkTargetInterface {
         requestResponse: Run (undefined)(undefined)
 }
@@ -43,22 +48,34 @@ service Driver {
         interfaces: DriverInterface
     }
 
+    inputPort Self{
+        interfaces: DriverInternalInterface
+        location: "local"
+    }
+
+    outputPort Self{
+        interfaces: DriverInternalInterface
+        location: "local"
+    }
+
     outputPort BenchmarkTarget {
         interfaces: BenchmarkTargetInterface
     }
 
-    main{
+    init{
         println@console("Driver starting")()
+    }
 
+    main{
         [ OpenProgram (request) (response) {
 
             loadEmbeddedService@runtime({ .filepath = request.program .type = "Jolie" .service = "run"})(BenchmarkTarget.location)
-            //println@console("loadEmbeddedService done")()
+            println@console("loadEmbeddedService done")()
 
             //Is there a better way to run the program for excatly 5 seconds, then killing it
             getCurrentTimeMillis@time()(curT)
             while(getCurrentTimeMillis@time(curT2) < (curT + request.warmup)){
-                RunProgram()()
+                RunProgram@Self()(response)
                 //println@console("warming up")()
             }
 
