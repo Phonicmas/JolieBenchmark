@@ -18,7 +18,7 @@ service Test {
     }
 
     init{
-        //println@console("Testing")()
+        println@console("Testing")()
         //sleep@time(500)()
     }
 

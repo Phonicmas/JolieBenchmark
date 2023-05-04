@@ -34,7 +34,7 @@ service Benchmark (p: params){
 
     outputPort Driver {
         location: "socket://localhost:8001"
-        protocol: http {}
+        protocol: http
         interfaces: DriverInterface
     }
 
@@ -46,7 +46,7 @@ service Benchmark (p: params){
         //Schedules the program to die in the given time
         //scheduleTimeout@time( p.maxLifetime { .operation = "LifetimeTracker" } )( );
 
-        exec@exec( "jolie" { .args[0] = "driver.ol" .waitFor = 0 .stdOutConsoleEnable = true})(res);
+        // exec@exec( "jolie" { .args[0] = "driver.ol" .waitFor = 0 .stdOutConsoleEnable = true})(res);
         println@console(valueToPrettyString@stringUtils(res))()
         sleep@time(1500)()
 
@@ -54,31 +54,32 @@ service Benchmark (p: params){
     }
 
     main{
-        println@console("Benchmarker starting")()
+        // driverReady()()
+        println@console("Benchmarker starting " + p.program)()
 
-        OpenProgram@Driver(p.program)(returnVal)
+        OpenProgram@Driver("test.ol")(returnVal)
         println@console("Program opened")()
 
         //Warmup the program for atleast the given amount, currently might run for more, depending on the program.
-        getCurrentTimeMillis@time()(curT)
-        while(getCurrentTimeMillis@time(curT2) < (curT + p.warmup)){
-            println@console("warming up")()
-            RunProgram@Driver()(response)
-            println@console(valueToPrettyString@stringUtils(response))()
-        }
+        // getCurrentTimeMillis@time()(curT)
+        // while(getCurrentTimeMillis@time(curT2) < (curT + p.warmup)){
+        //     println@console("warming up")()
+        //     RunProgram@Driver()(response)
+        //     println@console(valueToPrettyString@stringUtils(response))()
+        // }
 
-        //CollectMetrics@metricCollector()()
+        // //CollectMetrics@metricCollector()()
 
-        for(i = 0, i < p.invocations, i++) {
-                println@console("running benchmark")()
-                RunProgram@Driver()(CompletionTime)
-                //Write to file BenchmarkOutput, appends the content.
-                //writeFile@file( {.filename = filename_time .content = CompletionTime .append = 1} )()
-            }
+        // for(i = 0, i < p.invocations, i++) {
+        //         println@console("running benchmark")()
+        //         RunProgram@Driver()(CompletionTime)
+        //         //Write to file BenchmarkOutput, appends the content.
+        //         //writeFile@file( {.filename = filename_time .content = CompletionTime .append = 1} )()
+        //     }
 
-        sleep@time(p.cooldown)()
+        // sleep@time(p.cooldown)()
 
-        CloseProgram@Driver()()
+        // CloseProgram@Driver()()
 
         /*[ LifetimeTracker (request) {
             Shutdown@metricCollector()
