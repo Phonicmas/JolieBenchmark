@@ -18,8 +18,8 @@ service Test {
     }
 
     init{
-        println@console("Testing")()
-        sleep@time(500)()
+        //println@console("Testing")()
+        //sleep@time(500)()
     }
 
     main{

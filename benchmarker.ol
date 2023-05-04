@@ -16,7 +16,7 @@ type params {
 interface DriverInterface{
     RequestResponse:
         OpenProgram(string)(undefined),
-        RunProgram(undefined)(long),
+        RunProgram(undefined)(undefined),
         CloseProgram(undefined)(int),
         Shutdown(undefined)(undefined)
 }

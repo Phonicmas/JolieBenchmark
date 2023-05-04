@@ -52,9 +52,10 @@ service Driver {
 
     main{
         [ OpenProgram (request) (response) {
-            println@console("Opening Program")()
-            loadEmbeddedService@runtime({filepath = request.program type = "Jolie" service = "Run"})(BenchmarkTarget.location)
-            println@console("Program opened")()
+            println@console("Opening Program to be benchmarked")()
+            println@console(valueToPrettyString@stringUtils(request))()
+            loadEmbeddedService@runtime({filepath = request type = "Jolie"})(BenchmarkTarget.location)
+            println@console("Program to be benchmarked opened")()
 
             response = 0
         }
