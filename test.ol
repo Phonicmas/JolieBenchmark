@@ -18,14 +18,14 @@ service Test {
     }
 
     init{
-        sleep@time(500)()
         println@console("Testing")()
+        sleep@time(500)()
     }
 
     main{
         [Run (request) (response) {
-            sleep@time(1000)()
             println@console("Test")()
+            sleep@time(1000)()
         }]
     }
 }

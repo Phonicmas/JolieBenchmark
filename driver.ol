@@ -2,29 +2,25 @@ from console import Console
 from exec import Exec
 from runtime import Runtime
 from time import Time
-
-type programInfo {
-    program: string
-    warmup: int
-}
+from string-utils import StringUtils
 
 interface DriverInterface{
     RequestResponse:
-        OpenProgram(programInfo)(int),
+        OpenProgram(string)(undefined),
 
-        RunProgram(void)(int),
+        RunProgram(undefined)(long),
 
-        CloseProgram(void)(int),
+        CloseProgram(undefined)(int),
 
-        GetJavaVirtualMemory(void)(int),
+        GetJavaVirtualMemory(undefined)(long),
 
-        GetActualMemory(void)(int),
+        GetActualMemory(undefined)(long),
 
-        GetOpenChannels(void)(int),
+        GetOpenChannels(undefined)(long),
 
-        GetCPULoad(void)(int),
+        GetCPULoad(undefined)(long),
 
-        Shutdown(void)(void)
+        Shutdown(undefined)(undefined)
 }
 
 interface BenchmarkTargetInterface {
@@ -33,11 +29,12 @@ interface BenchmarkTargetInterface {
 
 service Driver {
 
-    execution: single
+    execution: concurrent
 
     embed Console as console
     embed Runtime as runtime
     embed Time as time
+    embed StringUtils as stringUtils
 
     inputPort Driver{
         location: "socket://localhost:8001"
@@ -55,9 +52,9 @@ service Driver {
 
     main{
         [ OpenProgram (request) (response) {
-
-            loadEmbeddedService@runtime({ .filepath = request.program .type = "Jolie" .service = "run"})(BenchmarkTarget.location)
-            println@console("loadEmbeddedService done")()
+            println@console("Opening Program")()
+            loadEmbeddedService@runtime({filepath = request.program type = "Jolie" service = "Run"})(BenchmarkTarget.location)
+            println@console("Program opened")()
 
             response = 0
         }
@@ -66,12 +63,13 @@ service Driver {
         [ RunProgram (request) (response) {
             getCurrentTimeMillis@time()(startT)
 
+            println@console("running program")()
             Run@BenchmarkTarget()()
-            
+            println@console("done program")()
+
             getCurrentTimeMillis@time()(endT)
             
-            println@console("running program")()
-            println@console((endT - startT))()
+            println@console(valueToPrettyString@stringUtils((endT - startT)))()
             
             response = (endT - startT)
         }
@@ -86,14 +84,12 @@ service Driver {
 
         [ GetJavaVirtualMemory (request) (response) {
             stats@runtime()(VMem)
-            println@console("getting VMem")()
-            response = VMem.memory.used
+            response << VMem.memory.used
         }
         ]
 
         [ GetActualMemory (request) (response) {
             //commitedMemory@BenchmarkService()(commitedMemory)
-            println@console("getting AMem")()
             //response = commitedMemory
             response = 0
         }
@@ -101,20 +97,18 @@ service Driver {
 
         [ GetOpenChannels (request) (response) {
             stats@runtime()(openChannels)
-            println@console("getting open channels")()
             response = openChannels.files.openCount
         }
         ]
 
         [ GetCPULoad (request) (response) {
             //CPULoad@BenchmarkService()(CPULoad)
-            println@console("getting cpu load")()
             //response = CPULoad
             response = 0
         }
         ]
 
-        [ shutdown () () {
+        [ Shutdown () () {
             exit
         }
         ]

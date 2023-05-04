@@ -4,15 +4,16 @@ from file import File
 
 interface DriverInterface{
     RequestResponse:
-        GetJavaVirtualMemory(void)(int),
-        GetActualMemory(void)(int),
-        GetOpenChannels(void)(int),
-        GetCPULoad(void)(int)
+        GetJavaVirtualMemory(undefined)(long),
+        GetActualMemory(undefined)(long),
+        GetOpenChannels(undefined)(long),
+        GetCPULoad(undefined)(long)
 }
 
 interface MetricInternalInterface{
     RequestResponse:
-        CollectMetrics(void)(void)
+        CollectMetrics(undefined)(undefined),
+        Shutdown(undefined)(undefined)
 }
 
 constants {
@@ -34,8 +35,7 @@ service MetricCollector (p:metricParams) {
     embed File as file
 
     inputPort Ip{
-        location: p.portLocation
-        protocol: http {}
+        location: "local"
         interfaces: MetricInternalInterface
     }
 
@@ -80,7 +80,7 @@ service MetricCollector (p:metricParams) {
         }
         ]
 
-        [ shutdown () () {
+        [ Shutdown () () {
             exit
         }
         ]
