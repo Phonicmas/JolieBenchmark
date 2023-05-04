@@ -7,7 +7,7 @@ interface testInterfance {
 
 service Test {
 
-    execution: single
+    execution: concurrent
 
     embed Console as console
     embed Time as time

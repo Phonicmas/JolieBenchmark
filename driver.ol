@@ -18,9 +18,9 @@ interface DriverInterface{
 
         GetOpenChannels(undefined)(long),
 
-        GetCPULoad(undefined)(long),
-
-        Shutdown(undefined)(undefined)
+        GetCPULoad(undefined)(long)
+    OneWay:
+        Shutdown(undefined)
 }
 
 interface BenchmarkTargetInterface {
@@ -54,7 +54,7 @@ service Driver {
         [ OpenProgram (request) (response) {
             println@console("Opening Program to be benchmarked")()
             println@console(valueToPrettyString@stringUtils(request))()
-            loadEmbeddedService@runtime({filepath = request type = "Jolie"})(BenchmarkTarget.location)
+            loadEmbeddedService@runtime({.filepath = request .type = "Jolie" .service="Test"})(BenchmarkTarget.location)
             println@console("Program to be benchmarked opened")()
 
             response = 0
@@ -109,9 +109,6 @@ service Driver {
         }
         ]
 
-        [ Shutdown () () {
-            exit
-        }
-        ]
+        [ Shutdown () ] { exit }
     }
 }

@@ -11,9 +11,9 @@ interface DriverInterface{
 }
 
 interface MetricInternalInterface{
-    RequestResponse:
-        CollectMetrics(undefined)(undefined),
-        Shutdown(undefined)(undefined)
+    OneWay:
+        CollectMetrics(undefined),
+        Shutdown(undefined)
 }
 
 constants {
@@ -46,7 +46,7 @@ service MetricCollector (p:metricParams) {
     }
 
     main {
-        [ CollectMetrics (request) (response) {
+        [ CollectMetrics (request) ]{
             sleep@time(1)()
             println@console("Metric collector starting")()
 
@@ -78,12 +78,8 @@ service MetricCollector (p:metricParams) {
                 sleep@time(p.samplingPeriod)()
             }
         }
-        ]
 
-        [ Shutdown () () {
-            exit
-        }
-        ]
+        [ Shutdown () ] { exit }
 
     }
 }

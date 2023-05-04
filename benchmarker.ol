@@ -17,8 +17,9 @@ interface DriverInterface{
     RequestResponse:
         OpenProgram(string)(undefined),
         RunProgram(undefined)(undefined),
-        CloseProgram(undefined)(int),
-        Shutdown(undefined)(undefined)
+        CloseProgram(undefined)(int)
+    OneWay:
+        Shutdown(undefined)
 }
 
 service Benchmark (p: params){
@@ -79,16 +80,13 @@ service Benchmark (p: params){
 
         CloseProgram@Driver()()
 
-        /*[ LifetimeTracker (request) (response) {
-            Shutdown@metricCollector()()
-            Shutdown@Driver()()
-            Shutdown()()
+        /*[ LifetimeTracker (request) {
+            Shutdown@metricCollector()
+            Shutdown@Driver()
+            Shutdown()
         }
         ]
 
-        [ Shutdown () () {
-            exit
-        }
-        ]*/
+        [ Shutdown () ] { exit }*/
     }
 }
