@@ -58,6 +58,7 @@ service Benchmark (p: params){
         println@console("Benchmarker starting " + p.program)()
 
         OpenProgram@Driver("test.ol")(returnVal)
+        // OpenProgram@Driver("test.ol")(returnVal)
         println@console("Program opened")()
 
         //Warmup the program for atleast the given amount, currently might run for more, depending on the program.

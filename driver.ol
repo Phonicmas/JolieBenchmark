@@ -38,7 +38,7 @@ service Driver {
 
     inputPort Driver{
         location: "socket://localhost:8001"
-        protocol: sodep
+        protocol: http
         interfaces: DriverInterface
     }
 
@@ -54,10 +54,8 @@ service Driver {
         [ OpenProgram (request) (response) {
             println@console("Opening Program to be benchmarked")()
             println@console(valueToPrettyString@stringUtils(request))()
-
             loadEmbeddedService@runtime({
                 filepath = request
-                service="Test"
             })(BenchmarkTarget.location)
             println@console("Program to be benchmarked opened")()
 
