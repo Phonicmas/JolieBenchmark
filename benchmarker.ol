@@ -71,10 +71,10 @@ service Benchmark (p: params){
 
         CollectMetrics@metricCollector()
 
-        /*writeFile@file( {
-                    filename = filename_time 
-                    content = "CompletionTime\n" 
-                    append = 1} )()*/
+        /*exists@file(filename_time)(fileExists)
+            if(fileExists){
+                delete@file(filename_memory)(r)
+            }*/
 
         /*for(i = 0, i < p.invocations, i++) {
                 println@console("running benchmark")()
@@ -84,12 +84,13 @@ service Benchmark (p: params){
                     filename = filename_time 
                     content = CompletionTime, 
                     append = 1} )()
-            }*/
+            }
 
-        //sleep@time(p.cooldown)()
+        sleep@time(p.cooldown)()*/
         println@console("Going to sleep")()
         sleep@time(2000)()
         println@console("Closing program")()
+
         CloseProgram@Driver()()
         Shutdown@metricCollector()
         Shutdown@Driver()
