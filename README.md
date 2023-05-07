@@ -1,3 +1,8 @@
 # JolieBenchmark
 
-This benchmark requires the user to make a jolie program, that will be given to the benchmarker. The said program MUST INCLUDE a "run()()" operation which in itself must run the operation or program that the user wishes to be benchmarked.
+To run this benchmark a few things are requires from the user(you).
+
+You must make a jolie program, containing an operaration "Run(undefined)(undefined)", which when run should run the method or program that needs to be benchmarked. If another program is being benchmarked, it should be running inside the same JVM as the jolie program itself.
+
+You may configure the config.json file to your liking, if nothing is done, default values are used.
+

@@ -13,6 +13,10 @@ type params {
     .warmup?: int
 }
 
+constants {
+    filename_time = "OutputCompletionTime.csv"
+}
+
 interface DriverInterface{
     RequestResponse:
         OpenProgram(string)(undefined),
@@ -34,7 +38,7 @@ service Benchmark (p: params){
 
     outputPort Driver {
         location: "socket://localhost:8001"
-        protocol: http {}
+        protocol: http
         interfaces: DriverInterface
     }
 
@@ -43,50 +47,66 @@ service Benchmark (p: params){
         
         //Used isDefined() to see if things are defined or if defaults should be used.
 
-        //Schedules the program to die in the given time
         //scheduleTimeout@time( p.maxLifetime { .operation = "LifetimeTracker" } )( );
 
-        exec@exec( "jolie" { .args[0] = "driver.ol" .waitFor = 0 .stdOutConsoleEnable = true})(res);
-        println@console(valueToPrettyString@stringUtils(res))()
+        //exec@exec( "jolie" { .args[0] = "driver.ol" .waitFor = 0 .stdOutConsoleEnable = true})(res);
+        //println@console(valueToPrettyString@stringUtils(res))()
         sleep@time(1500)()
 
         println@console("Init block end")()
     }
 
     main{
-        println@console("Benchmarker starting")()
+        println@console("Benchmarker starting " + p.program)()
 
         OpenProgram@Driver(p.program)(returnVal)
         println@console("Program opened")()
 
-        //Warmup the program for atleast the given amount, currently might run for more, depending on the program.
-        getCurrentTimeMillis@time()(curT)
+        /*getCurrentTimeMillis@time()(curT)
         while(getCurrentTimeMillis@time(curT2) < (curT + p.warmup)){
             println@console("warming up")()
             RunProgram@Driver()(response)
             println@console(valueToPrettyString@stringUtils(response))()
-        }
+        }*/
 
-        //CollectMetrics@metricCollector()()
+        CollectMetrics@metricCollector()
 
-        for(i = 0, i < p.invocations, i++) {
+        /*writeFile@file( {
+                    filename = filename_time 
+                    content = "CompletionTime\n" 
+                    append = 1} )()*/
+
+        /*for(i = 0, i < p.invocations, i++) {
                 println@console("running benchmark")()
                 RunProgram@Driver()(CompletionTime)
                 //Write to file BenchmarkOutput, appends the content.
-                //writeFile@file( {.filename = filename_time .content = CompletionTime .append = 1} )()
-            }
+                //writeFile@file( {
+                    filename = filename_time 
+                    content = CompletionTime, 
+                    append = 1} )()
+            }*/
 
-        sleep@time(p.cooldown)()
-
+        //sleep@time(p.cooldown)()
+        println@console("Going to sleep")()
+        sleep@time(2000)()
+        println@console("Closing program")()
         CloseProgram@Driver()()
+        Shutdown@metricCollector()
+        Shutdown@Driver()
+
+        //Plots the files to a png using premade gnu plot commands
+        exec@exec( "gnuplot" { .args[0] = "gnuCommandsMemory.p" .waitFor = 1})();
+        exec@exec( "gnuplot" { .args[0] = "gnuCommandsOpenChannels.p" .waitFor = 1})();
+        exec@exec( "gnuplot" { .args[0] = "gnuCommandsCPU.p" .waitFor = 1})();
+        //exec@exec( "gnuplot" { .args[0] = "gnuCompletionTime.p" .waitFor = 1})();
+
+        exit
 
         /*[ LifetimeTracker (request) {
             Shutdown@metricCollector()
             Shutdown@Driver()
-            Shutdown()
+            exit
         }
-        ]
-
-        [ Shutdown () ] { exit }*/
+        ]*/
     }
 }

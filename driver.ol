@@ -7,17 +7,11 @@ from string-utils import StringUtils
 interface DriverInterface{
     RequestResponse:
         OpenProgram(string)(undefined),
-
         RunProgram(undefined)(long),
-
         CloseProgram(undefined)(int),
-
         GetJavaVirtualMemory(undefined)(long),
-
         GetActualMemory(undefined)(long),
-
         GetOpenChannels(undefined)(long),
-
         GetCPULoad(undefined)(long)
     OneWay:
         Shutdown(undefined)
@@ -38,7 +32,7 @@ service Driver {
 
     inputPort Driver{
         location: "socket://localhost:8001"
-        protocol: http {}
+        protocol: http
         interfaces: DriverInterface
     }
 
@@ -54,7 +48,7 @@ service Driver {
         [ OpenProgram (request) (response) {
             println@console("Opening Program to be benchmarked")()
             println@console(valueToPrettyString@stringUtils(request))()
-            loadEmbeddedService@runtime({.filepath = request .type = "Jolie" .service="Test"})(BenchmarkTarget.location)
+            loadEmbeddedService@runtime({.filepath = request})(BenchmarkTarget.location)
             println@console("Program to be benchmarked opened")()
 
             response = 0

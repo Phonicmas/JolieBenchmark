@@ -17,8 +17,9 @@ interface MetricInternalInterface{
 }
 
 constants {
-    filename_metrics = "MetricsOuput.txt",
-    filename_time = "CompletionTimeOuput.txt"
+    filename_memory = "OutputMemory.csv",
+    filename_openchannels = "OutputOpenChannels.csv",
+    filename_cpu = "OutputCPU.csv"
 }
 
 type metricParams {
@@ -41,7 +42,7 @@ service MetricCollector (p:metricParams) {
 
     outputPort Driver {
         location: "socket://localhost:8001"
-        protocol: http {}
+        protocol: http
         interfaces: DriverInterface
     }
 
@@ -50,29 +51,71 @@ service MetricCollector (p:metricParams) {
             sleep@time(1)()
             println@console("Metric collector starting")()
 
+
+            /*HERE IN CASE I NEED TO MAKE MULTIPLE NEW BENCHMARKS FILES, THEY WILL BE ITERATED
+            filename_metrics = "MetricsOuput.txt"
+            exists = true
+            i = 1
+
+            while (exists) {
+                println@console(exists + " - " + i)()
+                exists@File(filename_metrics)(fileExists)
+                if (fileExists) {
+                    filename_metrics = "MetricsOutput.txt" + i
+                }
+            }*/
+
+            exists@file(filename_memory)(fileExists)
+            if(fileExists){
+                delete@file(filename_memory)(r)
+            }
+
+            exists@file(filename_cpu)(fileExists2)
+            if(fileExists2){
+                delete@file(filename_cpu)(r)
+            }
+
+            exists@file(filename_openchannels)(fileExists3)
+            if(fileExists3){
+                delete@file(filename_openchannels)(r)
+            }
+
+            /*writeFile@file( {
+                    filename = filename_metrics 
+                    content = "JavaMem,ActualMem,OpenChannels,CPULoad\n" 
+                    append = 1} )()*/
+
             while(true){
                 GetJavaVirtualMemory@Driver()(JavaMem)
-                println@console("JavaMem:" + JavaMem)()
-                //Write to file BenchmarkOutput, appends the content.
-                //writeFile@file( {.filename = filename_metrics .content = JavaMem .append = 1} )()
+                println@console("JavaMem:" + JavaMem + "bytes")()
+                writeFile@file( {
+                    filename = filename_memory 
+                    content = JavaMem + "," 
+                    append = 1} )()
 
                 
                 GetActualMemory@Driver()(ActualMem)
-                println@console("ActualMem:" + ActualMem)()
-                //Write to file BenchmarkOutput, appends the content.
-                //writeFile@file( {.filename = filename_metrics .content = ActualMem .append = 1} )()
+                println@console("ActualMem:" + ActualMem + "bytes")()
+                writeFile@file( {
+                    filename = filename_memory 
+                    content = ActualMem + "\n"
+                    append = 1} )()
 
                 
                 GetOpenChannels@Driver()(OpenChannels)
                 println@console("OpenChannels:" + OpenChannels)()
-                //Write to file BenchmarkOutput, appends the content.
-                //writeFile@file( {.filename = filename_metrics .content = OpenChannels .append = 1} )()
+                writeFile@file( {
+                    filename = filename_openchannels 
+                    content = OpenChannels + "\n"
+                    append = 1} )()
 
 
                 GetCPULoad@Driver()(CPULoad)
-                println@console("OpenChannels:" + CPULoad)()
-                //Write to file BenchmarkOutput, appends the content.
-                //writeFile@file( {.filename = filename_metrics .content = CPULoad .append = 1} )()
+                println@console("CPULoad:" + CPULoad + "%")()
+                writeFile@file( {
+                    filename = filename_cpu 
+                    content = CPULoad + "\n"
+                    append = 1} )()
 
                                 
                 sleep@time(p.samplingPeriod)()

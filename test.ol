@@ -2,7 +2,7 @@ from console import Console
 from time import Time
 
 interface testInterfance {
-        requestResponse: Run (undefined)(undefined)
+    requestResponse: Run (undefined)(undefined)
 }
 
 service Test {
@@ -12,14 +12,13 @@ service Test {
     embed Console as console
     embed Time as time
 
-    inputPort Driver{
+    inputPort Test{
         location: local
         interfaces: testInterfance
     }
 
     init{
-        //println@console("Testing")()
-        //sleep@time(500)()
+        println@console("Testing")()
     }
 
     main{
