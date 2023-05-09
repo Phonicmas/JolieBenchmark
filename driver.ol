@@ -3,6 +3,7 @@ from exec import Exec
 from runtime import Runtime
 from time import Time
 from string-utils import StringUtils
+from metric_java_service import BenchmarkService
 
 interface DriverInterface{
     RequestResponse:
@@ -12,7 +13,8 @@ interface DriverInterface{
         GetJavaVirtualMemory(undefined)(long),
         GetActualMemory(undefined)(long),
         GetOpenChannels(undefined)(long),
-        GetCPULoad(undefined)(long)
+        GetCPUSystemLoad(undefined)(double),
+        GetCPUJVMLoad(undefined)(double)
     OneWay:
         Shutdown(undefined)
 }
@@ -29,6 +31,7 @@ service Driver {
     embed Runtime as runtime
     embed Time as time
     embed StringUtils as stringUtils
+    embed BenchmarkService as benchmarkService
 
     inputPort Driver{
         location: "socket://localhost:8001"
@@ -46,11 +49,9 @@ service Driver {
 
     main{
         [ OpenProgram (request) (response) {
-            println@console("Opening Program to be benchmarked")()
-            println@console(valueToPrettyString@stringUtils(request))()
-            loadEmbeddedService@runtime({.filepath = request})(BenchmarkTarget.location)
-            println@console("Program to be benchmarked opened")()
-
+            println@console("Opening Program (" + request + ") to be benchmarked")()
+            loadEmbeddedService@runtime({.filepath = request})(t)
+            global.benchmarkLocation = t
             response = 0
         }
         ]
@@ -58,21 +59,19 @@ service Driver {
         [ RunProgram (request) (response) {
             getCurrentTimeMillis@time()(startT)
 
-            println@console("running program")()
+            BenchmarkTarget.location = global.benchmarkLocation
+            
             Run@BenchmarkTarget()()
-            println@console("done program")()
 
             getCurrentTimeMillis@time()(endT)
-            
-            println@console(valueToPrettyString@stringUtils((endT - startT)))()
             
             response = (endT - startT)
         }
         ]
 
         [ CloseProgram (request) (response) {
-            callExit@runtime(BenchmarkTarget.location)()
-            println@console("closing program")()
+            println@console("Closing program")()
+            callExit@runtime(BenchmarkTarget.location)()//Check if open before closing?
             response = 0
         }
         ]
@@ -84,9 +83,8 @@ service Driver {
         ]
 
         [ GetActualMemory (request) (response) {
-            //commitedMemory@BenchmarkService()(commitedMemory)
-            //response = commitedMemory
-            response = 0
+            stats@runtime()(VMem)
+            response << VMem.memory.total
         }
         ]
 
@@ -96,10 +94,15 @@ service Driver {
         }
         ]
 
-        [ GetCPULoad (request) (response) {
-            //CPULoad@BenchmarkService()(CPULoad)
-            //response = CPULoad
-            response = 0
+        [ GetCPUSystemLoad (request) (response) {
+            CPUSystemLoad@benchmarkService()(CPUSLoad)
+            response << CPUSLoad
+        }
+        ]
+
+        [ GetCPUJVMLoad (request) (response) {
+            CPUJVMLoad@benchmarkService()(CPUJLoad)
+            response << CPUJLoad
         }
         ]
 

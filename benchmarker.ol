@@ -1,6 +1,7 @@
 from exec import Exec
 from time import Time
 from console import Console
+from file import File
 from .metricCollector import MetricCollector
 from string-utils import StringUtils
 
@@ -35,6 +36,7 @@ service Benchmark (p: params){
     embed Time as time
     embed MetricCollector({.portLocation = "socket://localhost:8002" .samplingPeriod = p.samplingPeriod}) as metricCollector
     embed StringUtils as stringUtils
+    embed File as file
 
     outputPort Driver {
         location: "socket://localhost:8001"
@@ -44,70 +46,91 @@ service Benchmark (p: params){
 
     init{
         println@console("Program started")()
-        
-        //Used isDefined() to see if things are defined or if defaults should be used.
 
+        if(!is_defined(p.invocations)){p.invocations = 10000} //10000 invocation default
+        if(!is_defined(p.cooldown)){p.cooldown = 5000} //5sec default
+        if(!is_defined(p.maxLifetime)){p.maxLifetime = 300000} //5min default
+        if(!is_defined(p.samplingPeriod)){p.samplingPeriod = 250} //250milisecond default
+        if(!is_defined(p.warmup)){p.warmup = 5000} //5sec default
+        
         //scheduleTimeout@time( p.maxLifetime { .operation = "LifetimeTracker" } )( );
 
-        //exec@exec( "jolie" { .args[0] = "driver.ol" .waitFor = 0 .stdOutConsoleEnable = true})(res);
-        //println@console(valueToPrettyString@stringUtils(res))()
-        sleep@time(1500)()
-
-        println@console("Init block end")()
+        println@console(res)()
+        exec@exec( "jolie" { .args[0] = "driver.ol" .waitFor = 0 .stdOutConsoleEnable = true})(res);
+        sleep@time(2000)()
     }
 
     main{
-        println@console("Benchmarker starting " + p.program)()
+        println@console("Benchmarker starting for " + p.program)()
 
         OpenProgram@Driver(p.program)(returnVal)
-        println@console("Program opened")()
 
-        /*getCurrentTimeMillis@time()(curT)
-        while(getCurrentTimeMillis@time(curT2) < (curT + p.warmup)){
-            println@console("warming up")()
+        getCurrentTimeMillis@time()(startT)
+        println@console("Warming up")()
+        while(getCurrentTimeMillis@time(endT) < (startT + p.warmup)){
             RunProgram@Driver()(response)
-            println@console(valueToPrettyString@stringUtils(response))()
-        }*/
+        }
 
+        println@console("Starting metric collector")()
         CollectMetrics@metricCollector()
 
-        /*exists@file(filename_time)(fileExists)
+        exists@file(filename_time)(fileExists)
             if(fileExists){
-                delete@file(filename_memory)(r)
-            }*/
+                delete@file(filename_time)(r)
+            }
 
-        /*for(i = 0, i < p.invocations, i++) {
-                println@console("running benchmark")()
+        println@console("Running benchmark")()
+        for(i = 0, i < p.invocations, i++) {        
                 RunProgram@Driver()(CompletionTime)
-                //Write to file BenchmarkOutput, appends the content.
-                //writeFile@file( {
+                writeFile@file( {
                     filename = filename_time 
-                    content = CompletionTime, 
+                    content = CompletionTime + "," + i+1 + "\n"
                     append = 1} )()
             }
 
-        sleep@time(p.cooldown)()*/
-        println@console("Going to sleep")()
-        sleep@time(2000)()
-        println@console("Closing program")()
+        sleep@time(p.cooldown)()
 
-        CloseProgram@Driver()()
+        println@console("Stopping and closing metric collector")()
+        StopCollecting@metricCollector()
         Shutdown@metricCollector()
+
+        println@console("Stopping and closing driver")()
+        CloseProgram@Driver()()
         Shutdown@Driver()
 
+        println@console("Making plots")()
         //Plots the files to a png using premade gnu plot commands
         exec@exec( "gnuplot" { .args[0] = "gnuCommandsMemory.p" .waitFor = 1})();
         exec@exec( "gnuplot" { .args[0] = "gnuCommandsOpenChannels.p" .waitFor = 1})();
         exec@exec( "gnuplot" { .args[0] = "gnuCommandsCPU.p" .waitFor = 1})();
-        //exec@exec( "gnuplot" { .args[0] = "gnuCompletionTime.p" .waitFor = 1})();
+        exec@exec( "gnuplot" { .args[0] = "gnuCommandsCompletionTime.p" .waitFor = 1})();
+
+        println@console("Opening plots")()
+        exec@exec( "xdg-open" { .args[0] = "gnuPlotCPU.png" .waitFor = 0})();
+        exec@exec( "xdg-open" { .args[0] = "gnuPlotMemory.png" .waitFor = 0})();
+        exec@exec( "xdg-open" { .args[0] = "gnuPlotOpenChannels.png" .waitFor = 0})();
+        exec@exec( "xdg-open" { .args[0] = "gnuPlotCompletionTime.png" .waitFor = 0})();
 
         exit
 
-        /*[ LifetimeTracker (request) {
+        /*[ LifetimeTracker (request) ] {
+            println@console("Max lifetime reached, shutting down")()
+            StopCollecting@metricCollector()
             Shutdown@metricCollector()
+            CloseProgram@Driver()()
             Shutdown@Driver()
+
+            exec@exec( "gnuplot" { .args[0] = "gnuCommandsMemory.p" .waitFor = 1})();
+            exec@exec( "gnuplot" { .args[0] = "gnuCommandsOpenChannels.p" .waitFor = 1})();
+            exec@exec( "gnuplot" { .args[0] = "gnuCommandsCPU.p" .waitFor = 1})();
+            exec@exec( "gnuplot" { .args[0] = "gnuCompletionTime.p" .waitFor = 1})();
+
+            exec@exec( "xdg-open" { .args[0] = "gnuPlotCPU.png" .waitFor = 0})();
+            exec@exec( "xdg-open" { .args[0] = "gnuPlotMemory.png" .waitFor = 0})();
+            exec@exec( "xdg-open" { .args[0] = "gnuPlotOpenChannels.png" .waitFor = 0})();
+            exec@exec( "xdg-open" { .args[0] = "gnuPlotCompletionTime.png" .waitFor = 0})();
+
             exit
-        }
-        ]*/
+        }*/
     }
 }

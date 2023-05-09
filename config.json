@@ -1,7 +1,7 @@
 {
     "program": "test.ol",
-    "invocations": 1,
-    "cooldown": 2000,
+    "invocations": 20,
+    "cooldown": 1000,
     "maxLifetime": 60000,
     "samplingPeriod": 500,
     "warmup": 1500

@@ -7,13 +7,15 @@ interface DriverInterface{
         GetJavaVirtualMemory(undefined)(long),
         GetActualMemory(undefined)(long),
         GetOpenChannels(undefined)(long),
-        GetCPULoad(undefined)(long)
+        GetCPUSystemLoad(undefined)(double),
+        GetCPUJVMLoad(undefined)(double)
 }
 
 interface MetricInternalInterface{
     OneWay:
         CollectMetrics(undefined),
-        Shutdown(undefined)
+        Shutdown(undefined),
+        StopCollecting(undefined)
 }
 
 constants {
@@ -46,24 +48,12 @@ service MetricCollector (p:metricParams) {
         interfaces: DriverInterface
     }
 
+    execution: concurrent
     main {
         [ CollectMetrics (request) ]{
-            sleep@time(1)()
             println@console("Metric collector starting")()
 
-
-            /*HERE IN CASE I NEED TO MAKE MULTIPLE NEW BENCHMARKS FILES, THEY WILL BE ITERATED
-            filename_metrics = "MetricsOuput.txt"
-            exists = true
-            i = 1
-
-            while (exists) {
-                println@console(exists + " - " + i)()
-                exists@File(filename_metrics)(fileExists)
-                if (fileExists) {
-                    filename_metrics = "MetricsOutput.txt" + i
-                }
-            }*/
+            global.collectMetric = true
 
             exists@file(filename_memory)(fileExists)
             if(fileExists){
@@ -80,14 +70,10 @@ service MetricCollector (p:metricParams) {
                 delete@file(filename_openchannels)(r)
             }
 
-            /*writeFile@file( {
-                    filename = filename_metrics 
-                    content = "JavaMem,ActualMem,OpenChannels,CPULoad\n" 
-                    append = 1} )()*/
+            getCurrentTimeMillis@time()(startT)
 
-            while(true){
+            while(global.collectMetric){
                 GetJavaVirtualMemory@Driver()(JavaMem)
-                println@console("JavaMem:" + JavaMem + "bytes")()
                 writeFile@file( {
                     filename = filename_memory 
                     content = JavaMem + "," 
@@ -95,34 +81,54 @@ service MetricCollector (p:metricParams) {
 
                 
                 GetActualMemory@Driver()(ActualMem)
-                println@console("ActualMem:" + ActualMem + "bytes")()
                 writeFile@file( {
                     filename = filename_memory 
-                    content = ActualMem + "\n"
+                    content = ActualMem + ","
                     append = 1} )()
 
                 
                 GetOpenChannels@Driver()(OpenChannels)
-                println@console("OpenChannels:" + OpenChannels)()
                 writeFile@file( {
                     filename = filename_openchannels 
-                    content = OpenChannels + "\n"
+                    content = OpenChannels + ","
                     append = 1} )()
 
 
-                GetCPULoad@Driver()(CPULoad)
-                println@console("CPULoad:" + CPULoad + "%")()
+                GetCPUSystemLoad@Driver()(CPUSLoad)
                 writeFile@file( {
                     filename = filename_cpu 
-                    content = CPULoad + "\n"
+                    content = CPUSLoad + ","
                     append = 1} )()
 
-                                
+                GetCPUJVMLoad@Driver()(CPUJLoad)
+                writeFile@file( {
+                    filename = filename_cpu 
+                    content = CPUJLoad + ","
+                    append = 1} )()
+
+                getCurrentTimeMillis@time()(endT)
+
+                writeFile@file( {
+                    filename = filename_memory 
+                    content = double(endT-startT)/double(1000) + "\n"
+                    append = 1} )()
+
+                writeFile@file( {
+                    filename = filename_openchannels 
+                    content = double(endT-startT)/double(1000) + "\n"
+                    append = 1} )()
+
+                writeFile@file( {
+                    filename = filename_cpu 
+                    content = double(endT-startT)/double(1000) + "\n"
+                    append = 1} )()    
+
                 sleep@time(p.samplingPeriod)()
             }
         }
 
-        [ Shutdown () ] { exit }
+        [ StopCollecting (request) ] { global.collectMetric = false }
 
+        [ Shutdown () ] { exit }
     }
 }

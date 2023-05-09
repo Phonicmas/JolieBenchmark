@@ -1,5 +1,6 @@
 interface ServiceInterface{
-    requestResponse: test(string)(string)
+    requestResponse: CPUSystemLoad(void)(double)
+    requestResponse: CPUJVMLoad(void)(double)
 }
 
 service BenchmarkService {

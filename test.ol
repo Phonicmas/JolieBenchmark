@@ -17,14 +17,10 @@ service Test {
         interfaces: testInterfance
     }
 
-    init{
-        println@console("Testing")()
-    }
-
     main{
         [Run (request) (response) {
             println@console("Test")()
-            sleep@time(1000)()
+            sleep@time(250)()
         }]
     }
 }

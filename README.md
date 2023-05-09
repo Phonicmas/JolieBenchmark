@@ -6,3 +6,8 @@ You must make a jolie program, containing an operaration "Run(undefined)(undefin
 
 You may configure the config.json file to your liking, if nothing is done, default values are used.
 
+metric_java_service.ol should be placed in jolie/packages
+
+BenchmarkService.java should be placed in jolie/javaServices/coreJavaServices/src/main/java/joliex/benchmark
+
+after which mvn clean install can be run from jolie/
