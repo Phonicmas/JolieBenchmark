@@ -60,9 +60,7 @@ service JolieMiddleLayer {
             response << item@Hackernews(request)
 
             if (#response.kids == 1) {
-                println@console(response.kids)()
                 response.kids._ << request.kids
-                println@console(response.kids._)()
             }
             
         }
