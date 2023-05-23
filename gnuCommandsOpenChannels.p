@@ -1,7 +1,7 @@
 set title "Open channels"
 set xlabel "Time (Seconds)"
 set ylabel "Amount of open channels"
-set ter png size 800,600
+set ter png size 1920,1080
 set output "gnuPlotOpenChannels.png"
 set datafile separator ","
 set yrange [0:300]

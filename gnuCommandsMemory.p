@@ -1,7 +1,7 @@
 set title "Memory usage"
 set xlabel "Time (Seconds)"
 set ylabel "Memory usage (Bytes)"
-set ter png size 800,600
+set ter png size 1920,1080
 set output "gnuPlotMemory.png"
 set datafile separator ","
 set yrange [0:100000000]

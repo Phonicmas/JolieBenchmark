@@ -35,7 +35,7 @@ service Driver {
 
     inputPort Driver{
         location: "socket://localhost:8001"
-        protocol: http
+        protocol: sodep
         interfaces: DriverInterface
     }
 
@@ -53,25 +53,26 @@ service Driver {
             loadEmbeddedService@runtime({.filepath = request})(t)
             global.benchmarkLocation = t
             response = 0
+            println@console("Opened")()
         }
         ]
 
         [ RunProgram (request) (response) {
-            getCurrentTimeMillis@time()(startT)
-
             BenchmarkTarget.location = global.benchmarkLocation
+
+            getCurrentTimeMillis@time()(startT)
             
             Run@BenchmarkTarget()()
-
-            getCurrentTimeMillis@time()(endT)
             
+            getCurrentTimeMillis@time()(endT)
+
             response = (endT - startT)
         }
         ]
 
         [ CloseProgram (request) (response) {
-            println@console("Closing program")()
-            callExit@runtime(BenchmarkTarget.location)()//Check if open before closing?
+            println@console("Closing program that was benchmarked")()
+            callExit@runtime(BenchmarkTarget.location)()
             response = 0
         }
         ]

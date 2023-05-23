@@ -44,14 +44,14 @@ service MetricCollector (p:metricParams) {
 
     outputPort Driver {
         location: "socket://localhost:8001"
-        protocol: http
+        protocol: sodep
         interfaces: DriverInterface
     }
 
     execution: concurrent
     main {
         [ CollectMetrics (request) ]{
-            println@console("Metric collector starting")()
+            println@console("Metric collector started")()
 
             global.collectMetric = true
 

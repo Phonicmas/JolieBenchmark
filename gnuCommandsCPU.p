@@ -1,7 +1,7 @@
 set title "CPU usage"
 set xlabel "Time (Seconds)"
 set ylabel "CPU usage (Percent)"
-set ter png size 800,600
+set ter png size 1920,1080
 set output "gnuPlotCPU.png"
 set datafile separator ","
 set yrange [0:100]

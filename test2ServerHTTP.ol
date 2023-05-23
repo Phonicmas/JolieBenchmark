@@ -1,7 +1,7 @@
 from console import Console
 from time import Time
 
-interface testInterfance {
+interface testInterfaceServer {
     requestResponse: Run (undefined)(undefined)
 }
 
@@ -12,15 +12,15 @@ service Test {
     embed Console as console
     embed Time as time
 
-    inputPort Test{
-        location: local
-        interfaces: testInterfance
+    inputPort test {
+        location: "socket://localhost:8005"
+        protocol: http
+        interfaces: testInterfaceServer
     }
 
     main{
         [Run (request) (response) {
-            println@console("Test")()
-            sleep@time(250)()
+            response = 0
         }]
     }
 }

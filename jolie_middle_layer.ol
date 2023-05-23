@@ -40,30 +40,31 @@ service JolieMiddleLayer {
 
     //Input port - how others get things from this service
     inputPort JolieMiddleLayer {
-        location: "socket://localhost:8000"
-        protocol: http {
+        location: "socket://localhost:8005"
+        protocol: sodep /*{
             addHeader.header << "Access-Control-Allow-Origin" {value = "*"}
             contentType = "application/json"
             format = "json"
-            }
+            }*/
 
         interfaces: JolieMiddleLayerInterface
+    }
+
+    init {
+        println@console("JML starting")()
     }
 
     main{
         [ stories (request) (response){
             response << stories@Hackernews(request)
-        }
-        ]
+        }]
 
         [ item (request) (response) {
             response << item@Hackernews(request)
 
             if (#response.kids == 1) {
                 response.kids._ << request.kids
-            }
-            
-        }
-        ]
+            }   
+        }]
     }
 }

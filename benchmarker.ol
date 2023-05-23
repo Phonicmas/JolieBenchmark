@@ -40,11 +40,12 @@ service Benchmark (p: params){
 
     outputPort Driver {
         location: "socket://localhost:8001"
-        protocol: http
+        protocol: sodep
         interfaces: DriverInterface
     }
 
     init{
+        install (default => exit)
         println@console("Program started")()
 
         if(!is_defined(p.invocations)){p.invocations = 10000} //10000 invocation default
@@ -53,11 +54,8 @@ service Benchmark (p: params){
         if(!is_defined(p.samplingPeriod)){p.samplingPeriod = 250} //250milisecond default
         if(!is_defined(p.warmup)){p.warmup = 5000} //5sec default
         
-        //scheduleTimeout@time( p.maxLifetime { .operation = "LifetimeTracker" } )( );
-
-        println@console(res)()
         exec@exec( "jolie" { .args[0] = "driver.ol" .waitFor = 0 .stdOutConsoleEnable = true})(res);
-        sleep@time(2000)()
+        sleep@time(3000)()
     }
 
     main{
@@ -65,13 +63,18 @@ service Benchmark (p: params){
 
         OpenProgram@Driver(p.program)(returnVal)
 
+
         getCurrentTimeMillis@time()(startT)
+        getCurrentTimeMillis@time()(endT)
+        end = endT
+        start = startT+p.warmup
         println@console("Warming up")()
-        while(getCurrentTimeMillis@time(endT) < (startT + p.warmup)){
-            RunProgram@Driver()(response)
+        while(end < start){
+            getCurrentTimeMillis@time()(endT)
+            end = endT
+            RunProgram@Driver()()
         }
 
-        println@console("Starting metric collector")()
         CollectMetrics@metricCollector()
 
         exists@file(filename_time)(fileExists)
@@ -80,14 +83,22 @@ service Benchmark (p: params){
             }
 
         println@console("Running benchmark")()
+        CompletionTimes = 0
         for(i = 0, i < p.invocations, i++) {        
                 RunProgram@Driver()(CompletionTime)
                 writeFile@file( {
                     filename = filename_time 
-                    content = CompletionTime + "," + i+1 + "\n"
+                    content = CompletionTime + "," + int(i+1) + "\n"
                     append = 1} )()
+                CompletionTimes = CompletionTimes + CompletionTime
             }
 
+        CompletionTimes = CompletionTimes/p.invocations
+        writeFile@file( {
+                    filename = filename_time 
+                    content = CompletionTimes + "\n"
+                    append = 1} )()
+        println@console("Average time per invocation: " + CompletionTimes + " milliseconds")()
         sleep@time(p.cooldown)()
 
         println@console("Stopping and closing metric collector")()
@@ -99,38 +110,19 @@ service Benchmark (p: params){
         Shutdown@Driver()
 
         println@console("Making plots")()
-        //Plots the files to a png using premade gnu plot commands
+
+        //Can probably make it not wait for each exec to complete, doesn't really matter
         exec@exec( "gnuplot" { .args[0] = "gnuCommandsMemory.p" .waitFor = 1})();
         exec@exec( "gnuplot" { .args[0] = "gnuCommandsOpenChannels.p" .waitFor = 1})();
         exec@exec( "gnuplot" { .args[0] = "gnuCommandsCPU.p" .waitFor = 1})();
-        exec@exec( "gnuplot" { .args[0] = "gnuCommandsCompletionTime.p" .waitFor = 1})();
+        //exec@exec( "gnuplot" { .args[0] = "gnuCommandsCompletionTime.p" .waitFor = 1})();
 
-        println@console("Opening plots")()
+        /*println@console("Opening plots")()
         exec@exec( "xdg-open" { .args[0] = "gnuPlotCPU.png" .waitFor = 0})();
         exec@exec( "xdg-open" { .args[0] = "gnuPlotMemory.png" .waitFor = 0})();
         exec@exec( "xdg-open" { .args[0] = "gnuPlotOpenChannels.png" .waitFor = 0})();
-        exec@exec( "xdg-open" { .args[0] = "gnuPlotCompletionTime.png" .waitFor = 0})();
+        exec@exec( "xdg-open" { .args[0] = "gnuPlotCompletionTime.png" .waitFor = 0})();*/
 
         exit
-
-        /*[ LifetimeTracker (request) ] {
-            println@console("Max lifetime reached, shutting down")()
-            StopCollecting@metricCollector()
-            Shutdown@metricCollector()
-            CloseProgram@Driver()()
-            Shutdown@Driver()
-
-            exec@exec( "gnuplot" { .args[0] = "gnuCommandsMemory.p" .waitFor = 1})();
-            exec@exec( "gnuplot" { .args[0] = "gnuCommandsOpenChannels.p" .waitFor = 1})();
-            exec@exec( "gnuplot" { .args[0] = "gnuCommandsCPU.p" .waitFor = 1})();
-            exec@exec( "gnuplot" { .args[0] = "gnuCompletionTime.p" .waitFor = 1})();
-
-            exec@exec( "xdg-open" { .args[0] = "gnuPlotCPU.png" .waitFor = 0})();
-            exec@exec( "xdg-open" { .args[0] = "gnuPlotMemory.png" .waitFor = 0})();
-            exec@exec( "xdg-open" { .args[0] = "gnuPlotOpenChannels.png" .waitFor = 0})();
-            exec@exec( "xdg-open" { .args[0] = "gnuPlotCompletionTime.png" .waitFor = 0})();
-
-            exit
-        }*/
     }
 }
